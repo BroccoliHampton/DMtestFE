@@ -227,7 +227,13 @@ export function toggleView(dom, playSoundEffect, composer) {
     body.classList.remove('dark', 'blaze-style', 'police');
     dom.glazery.rainContainer.classList.remove('blaze-active', 'police-active');
     
+    // Reset dark mode state if switching away from dark style
+    if (State.uiState.currentVisualStyle !== 1) {
+        State.uiState.isDarkMode = false;
+    }
+    
     // Apply the selected style
+    console.log('[Visual Style] Switching to style:', State.uiState.currentVisualStyle);
     switch (State.uiState.currentVisualStyle) {
         case 0: // Default/Pink style
             dom.glazery.glazeContainer.classList.remove('hidden');
@@ -244,6 +250,7 @@ export function toggleView(dom, playSoundEffect, composer) {
             dom.glazery.blazeContainer.classList.add('hidden');
             dom.glazery.toggleButton.textContent = '🌙';
             body.classList.add('dark');
+            State.uiState.isDarkMode = true;
             State.uiState.isGlazeView = true;
             if (composer) {
                 composer.enabled = false;
@@ -267,10 +274,12 @@ export function toggleView(dom, playSoundEffect, composer) {
             dom.glazery.toggleButton.textContent = '🚔';
             body.classList.add('police');
             dom.glazery.rainContainer.classList.add('police-active');
+            State.uiState.isDarkMode = false; // Make sure dark mode is off for police
             State.uiState.isGlazeView = true;
             if (composer) {
                 composer.enabled = false;
             }
+            console.log('[Visual Style] Police theme activated!');
             break;
     }
 }
