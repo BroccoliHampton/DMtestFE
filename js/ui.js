@@ -1,6 +1,5 @@
 // js/ui.js
 import * as State from './state.js';
-import * as WalletProvider from './walletProvider.js';
 
 // --- Private Helper Functions (only used inside this file) ---
 
@@ -74,28 +73,21 @@ export function cacheDOMElements() {
  * Opens Farcaster composer with pre-filled message and link
  * @param {function} playSoundEffect - The function to call for audio.
  */
-export async function handleShareClick(playSoundEffect) {
+export function handleShareClick(playSoundEffect) {
     playSoundEffect('crunch');
     
     const message = "I'm hand glazing $DONUT at Pinky Glazers Donut Shop!";
     const url = "https://donut-minerv2.vercel.app/";
     
+    // URL encode the text and embed
     const encodedText = encodeURIComponent(message);
     const encodedUrl = encodeURIComponent(url);
+    
+    // Construct Warpcast composer URL
     const warpcastUrl = `https://warpcast.com/~/compose?text=${encodedText}&embeds[]=${encodedUrl}`;
     
-    console.log('[Share] Attempting to share via Farcaster SDK...');
-    
-    // Try SDK first (for mobile Farcaster miniapp)
-    const usedSdk = await WalletProvider.openUrl(warpcastUrl);
-    
-    // Fallback to window.open if SDK not available (desktop/browser)
-    if (!usedSdk) {
-        console.log('[Share] SDK not available, opening in new window');
-        window.open(warpcastUrl, '_blank');
-    } else {
-        console.log('[Share] Successfully opened via Farcaster SDK');
-    }
+    // Open in new window/tab
+    window.open(warpcastUrl, '_blank');
 }
 
 /**
@@ -219,61 +211,86 @@ export function updateUI(dom) {
 }
 
 /**
- * Toggles between the Glaze and Blaze views.
+ * Cycles through the 4 visual styles: Default, Dark, Blaze, Police.
  * @param {object} dom - The DOM elements object.
  * @param {function} playSoundEffect - The function to call for audio.
  * @param {object} composer - The Three.js EffectComposer.
  */
 export function toggleView(dom, playSoundEffect, composer) {
     playSoundEffect('crunch');
-    State.uiState.isGlazeView = !State.uiState.isGlazeView;
+    const body = document.body;
     
-    if (State.uiState.isGlazeView) {
-        dom.glazery.glazeContainer.classList.remove('hidden');
-        dom.glazery.blazeContainer.classList.add('hidden');
-        dom.glazery.toggleButton.textContent = '🧊';
-        dom.glazery.rainContainer.classList.remove('blaze-active');
-        if (composer) {
-            composer.enabled = false;
-        }
-    } else {
-        dom.glazery.glazeContainer.classList.add('hidden');
-        dom.glazery.blazeContainer.classList.remove('hidden');
-        dom.glazery.toggleButton.textContent = '🔥';
-        dom.glazery.rainContainer.classList.add('blaze-active');
-        if (composer) {
-            composer.enabled = true;
-        }
+    // Cycle through 4 styles: 0=default, 1=dark, 2=blaze, 3=police
+    State.uiState.currentVisualStyle = (State.uiState.currentVisualStyle + 1) % 4;
+    
+    // Remove all style classes first
+    body.classList.remove('dark', 'blaze-style', 'police');
+    dom.glazery.rainContainer.classList.remove('blaze-active', 'police-active');
+    
+    // Apply the selected style
+    switch (State.uiState.currentVisualStyle) {
+        case 0: // Default/Pink style
+            dom.glazery.glazeContainer.classList.remove('hidden');
+            dom.glazery.blazeContainer.classList.add('hidden');
+            dom.glazery.toggleButton.textContent = '🧊';
+            State.uiState.isGlazeView = true;
+            if (composer) {
+                composer.enabled = false;
+            }
+            break;
+            
+        case 1: // Dark style
+            dom.glazery.glazeContainer.classList.remove('hidden');
+            dom.glazery.blazeContainer.classList.add('hidden');
+            dom.glazery.toggleButton.textContent = '🌙';
+            body.classList.add('dark');
+            State.uiState.isGlazeView = true;
+            if (composer) {
+                composer.enabled = false;
+            }
+            break;
+            
+        case 2: // Blaze style
+            dom.glazery.glazeContainer.classList.add('hidden');
+            dom.glazery.blazeContainer.classList.remove('hidden');
+            dom.glazery.toggleButton.textContent = '🔥';
+            dom.glazery.rainContainer.classList.add('blaze-active');
+            State.uiState.isGlazeView = false;
+            if (composer) {
+                composer.enabled = true;
+            }
+            break;
+            
+        case 3: // Police style
+            dom.glazery.glazeContainer.classList.remove('hidden');
+            dom.glazery.blazeContainer.classList.add('hidden');
+            dom.glazery.toggleButton.textContent = '🚔';
+            body.classList.add('police');
+            dom.glazery.rainContainer.classList.add('police-active');
+            State.uiState.isGlazeView = true;
+            if (composer) {
+                composer.enabled = false;
+            }
+            break;
     }
 }
 
 /**
- * Cycles through three themes: light -> dark -> sproto -> light
+ * Toggles dark mode on and off.
  * @param {object} dom - The DOM elements object.
  * @param {function} playSoundEffect - The function to call for audio.
  */
-export function toggleTheme(dom, playSoundEffect) {
+export function toggleDarkMode(dom, playSoundEffect) {
     playSoundEffect('crunch');
+    State.uiState.isDarkMode = !State.uiState.isDarkMode;
     const body = document.body;
-    
-    // Cycle through: light -> dark -> sproto -> light
-    if (State.uiState.themeMode === 'light') {
-        State.uiState.themeMode = 'dark';
-        body.classList.remove('sproto');
+    if (State.uiState.isDarkMode) {
         body.classList.add('dark');
         dom.darkModeToggleButton.textContent = '☀️';
-    } else if (State.uiState.themeMode === 'dark') {
-        State.uiState.themeMode = 'sproto';
-        body.classList.remove('dark');
-        body.classList.add('sproto');
-        dom.darkModeToggleButton.textContent = '🎨';
     } else {
-        State.uiState.themeMode = 'light';
-        body.classList.remove('dark', 'sproto');
+        body.classList.remove('dark');
         dom.darkModeToggleButton.textContent = '🌙';
     }
-    
-    console.log(`[Theme] Switched to ${State.uiState.themeMode} mode`);
 }
 
 /**
