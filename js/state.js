@@ -34,8 +34,7 @@ export let blockchainData = {
 };
 
 export let uiState = {
-    isDarkMode: false,
+    themeMode: 'light', // 'light', 'dark', or 'sproto'
     isSfxMuted: false,
     isGlazeView: true,
-    currentVisualStyle: 0, // 0 = default/pink, 1 = dark, 2 = blaze, 3 = police
 };
